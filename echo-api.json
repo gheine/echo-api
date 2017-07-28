@@ -1,0 +1,72 @@
+{
+  "name": "echo-api",
+  "base_url": "https://echo.hbccommon.private.hbc.com",
+  "apidoc": {
+    "version": "0.1"
+  },
+  "description": "An echo api",
+  "info": {
+    "contact": {
+      "name": "Producty-Team",
+      "email": "producty-team@hbc.com"
+    }
+  },
+  "headers": [
+    {
+      "name": "X-Apidoc-Version-Major",
+      "type": "string",
+      "description": "Request header used by the client to specify which major API version it is requesting. If missing, latest API version is implied."
+    },
+    {
+      "name": "X-Apidoc-Version",
+      "type": "string",
+      "required": false,
+      "description": "Optional request header used by the client to specify which exact API version it was generated for."
+    },
+    {
+      "name": "X-Request-Id",
+      "type": "string",
+      "description": "Response header returned by all operations. Identifies the server-side request id of the call."
+    }
+  ],
+  "models": {
+    "echo": {
+      "description": "The echo",
+      "fields": [
+        {
+          "name": "message",
+          "type": "string",
+          "description": "Something to be echoed....",
+          "required": true,
+          "example": "echo........"
+        }
+      ]
+    }
+  },
+  "resources": {
+    "echo" : {
+      "path": "/echo/:message",
+      "operations": [
+        {
+          "method": "GET",
+          "description": "Echo a message",
+          "parameters": [
+            {
+              "name": "message",
+              "type": "string",
+              "location": "path",
+              "description": "the message to be echoed",
+              "required": true,
+              "example": "echoooooooo....."
+            }
+          ],
+          "responses": {
+            "200": { "type": "[string]", "description": "The message was echoed" },
+            "400": { "type": "unit", "description": "Any of the parameters are invalid/malformed." },
+            "500": { "type": "unit", "description": "All other errors." }
+          }
+        }
+      ]
+    }
+  }
+}
