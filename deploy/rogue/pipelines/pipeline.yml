@@ -1,0 +1,278 @@
+groups:
+- name: CI
+  jobs:
+  - test
+  - build
+  - deploy-dev
+  - tag-release
+  - deploy-stqa
+- name: PuP
+  jobs:
+  - update-pipeline
+  - execute-pipeline
+
+############
+
+resources:
+- name: ((app-name))-repo
+  type: git
+  source:
+    uri: https://github.com/gambtho/((app-name))
+    branch: ((app-branch))
+    username: ((git-user))
+    password: ((git-token-password))
+    ignore_paths:
+      - deploy/rogue/pipelines/pipeline.yml
+      - deploy/rogue/pipelines/setup-pipeline.sh
+      - gocd/*
+      - ((app-branch))-version
+
+- name: aws-ref-arch
+  type: git
+  source:
+    uri: https://github.com/saksdirect/aws-ref-arch
+    tag_filter: v0.0.13
+    username: ((git-user))
+    password: ((git-token-password))
+
+- name: ((app-name))-image
+  type: docker-image
+  source:
+    repository: hbc-docker.jfrog.io/((app-name))
+    username: ((artifactory-username))
+    password: ((artifactory-password))
+
+- name: sbt-image
+  type: docker-image
+  source:
+    repository: hbc-docker.jfrog.io/microservice-build
+    tag: sbt-0.13.8
+    username: ((artifactory-username))
+    password: ((artifactory-password))
+
+- name: version
+  type: semver
+  source:
+    driver: git
+    initial_version: 1.0.0
+    uri: https://github.com/gambtho/((app-name))
+    branch: ((app-branch))
+    username: ((git-user))
+    password: ((git-token-password))
+    file: ((app-branch))-version
+
+#### PuP resources ####
+- name: ((app-name))-pipeline
+  type: git
+  source:
+    uri: https://github.com/gambtho/((app-name))
+    branch: ((app-branch))
+    paths:
+      - deploy/rogue/pipelines/pipeline.yml
+      - deploy/rogue/pipelines/config.yml
+      - deploy/rogue/pipelines/tasks/*
+    username: ((git-user))
+    password: ((git-token-password))
+
+- name: fly
+  type: fly
+  source:
+    url: ((concourse-url))
+    username: ((concourse-username))
+    password: ((concourse-password))
+    team: ((concourse-team))
+
+- name: slack-alert
+  type: slack-notification
+  source:
+    url: https://hooks.slack.com/services/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
+
+jobs:
+- name: test
+  plan:
+  - aggregate:
+    - get: ((app-name))-repo
+      trigger: true
+    - get: sbt-image
+
+  - task: unit
+    file: ((app-name))-repo/deploy/rogue/pipelines/tasks/01_test_unit.yml
+    image: sbt-image
+    params:
+      JFROG_USER: ((artifactory-username))
+      JFROG_PASS: ((artifactory-password))
+
+- name: build
+  plan:
+  - aggregate:
+    - get: ((app-name))-repo
+      passed: [test]
+      trigger: true
+    - get: sbt-image
+
+  - task: dist
+    file: ((app-name))-repo/deploy/rogue/pipelines/tasks/02_build_dist.yml
+    image: sbt-image
+    params:
+      JFROG_USER: ((artifactory-username))
+      JFROG_PASS: ((artifactory-password))
+
+  - put: ((app-name))-image
+    params:
+      build: artifacts
+      tag: artifacts/commit_sha
+      tag_as_latest: true
+
+- name: deploy-dev
+  plan:
+  - aggregate:
+    - get: terraform-image
+    - get: aws-ref-arch
+    - get: ((app-name))-repo
+      passed: [build]
+      trigger: true
+
+  - task: terraform
+    file: ((app-name))-repo/deploy/rogue/pipelines/tasks/03_dev_terraform.yml
+    image: terraform-image
+    params:
+      AWS_DEFAULT_REGION: "us-east-1"
+      NEW_RELIC_LICENSE_KEY: "" # keep empty for lower environments deployments
+      TF_ENV: ((app-branch))
+      NEW_RELIC_APP_NAME: "((app-name))-((app-branch))_aws_stqa_saks" # here (app-branch) param should be maybe replaced by ${TF_ENV}
+
+- name: tag-release
+  plan:
+  - aggregate:
+    - get: ((app-name))-repo
+      passed: [deploy-dev]
+    - get: sbt-image
+
+  - task: check-master-branch
+    file: ((app-name))-repo/deploy/rogue/pipelines/tasks/04_check_master_branch.yml
+    image: sbt-image
+    params:
+      BRANCH: ((app-branch))
+
+  - get: ((app-name))-image
+    params:
+      save: true
+
+  - put: version
+    params: {bump: minor}
+
+  - put: ((app-name))-image
+    params:
+      load: ((app-name))-image
+      tag: version/number
+
+- name: deploy-stqa
+  plan:
+  - aggregate:
+    - get: terraform-image
+
+    - get: aws-ref-arch
+
+    - get: ((app-name))-repo
+      passed: [tag-release]
+
+    - get: version
+      passed: [tag-release]
+
+  - task: terraform
+    file: ((app-name))-repo/deploy/rogue/pipelines/tasks/05_deploy_terraform.yml
+    image: terraform-image
+    params:
+      AWS_DEFAULT_REGION: "us-east-1"
+      NEW_RELIC_LICENSE_KEY: ((new_relic_license_key))
+      TF_ENV: STQA
+      NEW_RELIC_APP_NAME: "((app-name))-STQA"
+
+###########################
+# PuP jobs
+###########################
+- name: update-pipeline
+  plan:
+  - get: ((app-name))-pipeline
+    trigger: true
+
+  - task: fly-create-secrets
+    config:
+      platform: linux
+
+      image_resource:
+        type: docker-image
+        source: { repository: alpine }
+
+      inputs:
+      - name: ((app-name))-pipeline
+
+      outputs:
+      - name: secrets
+
+      run:
+        path: sh
+        args:
+          - -exc
+          - |
+            cat > secrets/secrets.yml <<EOL
+              git-user: ((git-user))
+              git-token-password: ((git-token-password))
+              artifactory-username: ((artifactory-username))
+              artifactory-password: ((artifactory-password))
+              new_relic_license_key: ((new_relic_license_key))
+              concourse-username: ((concourse-username))
+              concourse-password: ((concourse-password))
+            EOL
+
+  - put: fly
+    params:
+      command: set-pipeline
+      options: "-n -p ((app-name))_((app-branch)) -c ((app-name))-pipeline/deploy/rogue/pipelines/pipeline.yml --load-vars-from /tmp/build/put/((app-name))-pipeline/deploy/rogue/pipelines/config.yml --load-vars-from /tmp/build/put/secrets/secrets.yml -v app-branch=((app-branch))"
+
+  - put: slack-alert
+    params:
+      always_notify: true
+      channel: '#concourse-ci'
+      username: 'Concourse CI'
+      icon_emoji: ':airplane:'
+      text: ":white_check_mark: ((app-name))_((app-branch)) pipeline updated - Check it out  <((concourse-url))/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|here>"
+
+- name: execute-pipeline
+  plan:
+  - get: ((app-name))-pipeline
+    passed: [update-pipeline]
+    trigger: true
+
+  - aggregate:
+    - put: slack-alert
+      params:
+        always_notify: true
+        channel: '#concourse-ci'
+        username: 'Concourse CI'
+        icon_emoji: ':airplane:'
+        text: ":arrows_counterclockwise: Triggering job ((app-name))_((app-branch))/*test*  <((concourse-url))/teams/$BUILD_TEAM_NAME/pipelines/((app-name))_((app-branch))|now>..."
+
+    - put: fly
+      params:
+        command: trigger-job
+        options: "--watch --job ((app-name))_((app-branch))/test"
+
+    - put: fly
+      params:
+        command: unpause-job
+        options: "-j ((app-name))_((app-branch))/test"
+
+resource_types:
+- name: slack-notification
+  type: docker-image
+  source:
+    repository: cfcommunity/slack-notification-resource
+    tag: latest
+- name: fly
+  type: docker-image
+  source:
+    repository: hbc-docker.jfrog.io/concourse-fly-resource
+    username: ((artifactory-username))
+    password: ((artifactory-password))
+    tag: latest

@@ -1,0 +1,27 @@
+platform: linux
+
+inputs:
+- name: echo-api-repo
+
+outputs:
+- name: artifacts
+
+caches:
+- path: echo-api-repo/ivy
+
+params:
+  SBT_OPTS: -Dsbt.ivy.home=./ivy
+
+run:
+  dir: echo-api-repo
+  path: sh
+  args:
+  - -exc
+  - |
+    sbt clean dist
+    sbt docker:publishLocal
+    cp target/docker/Dockerfile               ../artifacts/Dockerfile
+    cp deploy/rogue/terraform/newrelic.yml    ../artifacts/newrelic.yml
+    cp -r conf/*                              ../artifacts/
+    git rev-parse --short HEAD > ../artifacts/commit_sha
+
