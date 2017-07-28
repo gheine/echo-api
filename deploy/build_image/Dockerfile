@@ -8,4 +8,4 @@ RUN apk add --no-cache bash curl openrc && \
     chmod 0755 /usr/local/bin/sbt && \
     apk add --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/main --repository  http://dl-cdn.alpinelinux.org/alpine/edge/community docker
 
-RUN rc-update add docker && service docker start && sbt
+RUN service docker start && sbt
