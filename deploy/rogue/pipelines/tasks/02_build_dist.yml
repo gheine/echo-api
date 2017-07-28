@@ -18,10 +18,7 @@ run:
   args:
   - -exc
   - |
-    sbt clean dist
     sbt docker:publishLocal
-    cp target/docker/Dockerfile               ../artifacts/Dockerfile
-    cp deploy/rogue/terraform/newrelic.yml    ../artifacts/newrelic.yml
-    cp -r conf/*                              ../artifacts/
+    cp target/docker/stage/*      ../artifacts
     git rev-parse --short HEAD > ../artifacts/commit_sha
 

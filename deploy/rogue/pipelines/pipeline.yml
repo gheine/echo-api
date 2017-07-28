@@ -27,6 +27,13 @@ resources:
       - gocd/*
       - ((app-branch))-version
 
+- name: terraform-image
+  type: docker-image
+  source:
+    repository: hbc-docker.jfrog.io/ruby-terraform-mongo
+    username: ((artifactory-username))
+    password: ((artifactory-password))
+
 - name: aws-ref-arch
   type: git
   source:
