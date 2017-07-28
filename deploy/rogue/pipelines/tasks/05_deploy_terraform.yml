@@ -1,0 +1,15 @@
+platform: linux
+
+inputs:
+- name: echo-api-repo
+- name: aws-ref-arch
+- name: version
+
+run:
+  dir: echo-api-repo/infrastructure/terraform
+  path: bash
+  args:
+    - -exc
+    - |
+      tag=$(cat ../../../version/number)
+      ./scripts/deploy.sh $tag

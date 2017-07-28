@@ -1,0 +1,24 @@
+platform: linux
+
+inputs:
+- name: echo-api-repo
+
+outputs:
+- name: artifacts
+
+caches:
+- path: echo-api-repo/ivy
+
+params:
+  SBT_OPTS: -Dsbt.ivy.home=./ivy
+
+run:
+  dir: echo-api-repo
+  path: sh
+  args:
+  - -exc
+  - |
+    sbt docker:stage
+    cp -R target/docker/stage/*      ../artifacts
+    git rev-parse --short HEAD > ../artifacts/commit_sha
+

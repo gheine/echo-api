@@ -1,8 +1,8 @@
 {
   "name": "echo-api",
-  "base_url": "https://echo.hbccommon.private.hbc.com",
+  "base_url": "http://live.echo-api-master.stqa.s5a.hbccommon.private.hbc.com",
   "apidoc": {
-    "version": "0.1"
+    "version": "0.2.1"
   },
   "description": "An echo api",
   "info": {
@@ -61,7 +61,7 @@
             }
           ],
           "responses": {
-            "200": { "type": "[string]", "description": "The message was echoed" },
+            "200": { "type": "[echo]", "description": "The message was echoed" },
             "400": { "type": "unit", "description": "Any of the parameters are invalid/malformed." },
             "500": { "type": "unit", "description": "All other errors." }
           }

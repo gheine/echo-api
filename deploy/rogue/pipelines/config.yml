@@ -1,0 +1,5 @@
+app-name: echo-api
+app-branch: master
+concourse-team: main
+concourse-url: http://producty-concourse.hbccommon.private.hbc.com
+

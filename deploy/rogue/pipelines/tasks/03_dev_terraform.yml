@@ -1,0 +1,14 @@
+platform: linux
+
+inputs:
+- name: echo-api-repo
+- name: aws-ref-arch
+
+run:
+  dir: echo-api-repo/deploy/rogue/terraform
+  path: bash
+  args:
+    - -exc
+    - |
+      commit_sha=$(git rev-parse --short HEAD)
+      ./scripts/deploy.sh $commit_sha
