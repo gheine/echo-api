@@ -18,6 +18,7 @@ run:
   args:
   - -exc
   - |
+    whoami
     sbt docker:publishLocal
     cp target/docker/stage/*      ../artifacts
     git rev-parse --short HEAD > ../artifacts/commit_sha
