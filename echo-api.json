@@ -2,7 +2,7 @@
   "name": "echo-api",
   "base_url": "https://echo.hbccommon.private.hbc.com",
   "apidoc": {
-    "version": "0.1"
+    "version": "0.1.1"
   },
   "description": "An echo api",
   "info": {
