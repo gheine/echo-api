@@ -1,4 +1,4 @@
-package com.hbccommon.echo
+package com.hbccommon.echoApi
 
 import java.util.concurrent.{ExecutorService, Executors}
 
@@ -19,7 +19,7 @@ object App extends ServerApp {
   override def server(args: List[String]): Task[Server] =
     BlazeBuilder
       .bindHttp(port, ip)
-      .mountService(Service.service)
+      .mountService(EchoApi.service)
       .withServiceExecutor(pool)
       .start
 }

@@ -3,7 +3,7 @@
  * Service version: 0.2.1
  * apibuilder:0.12.52 https://app.apibuilder.io/hbc/echo-api/0.2.1/http4s_0_15
  */
-package com.hbccommon.echo.api.v0 {
+package com.hbccommon.echoApi.api.v0 {
   /**
    * The echo
    * @param message Something to be echoed....
@@ -14,7 +14,7 @@ package com.hbccommon.echo.api.v0 {
 
 }
 
-package com.hbccommon.echo.api.v0 {
+package com.hbccommon.echoApi.api.v0 {
 
   package object json {
     import io.circe.syntax._
