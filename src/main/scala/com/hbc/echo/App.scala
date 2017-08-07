@@ -1,4 +1,4 @@
-package com.hbccommon.echoApi
+package com.hbc.echo
 
 import java.util.concurrent.{ExecutorService, Executors}
 

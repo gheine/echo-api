@@ -1,10 +1,11 @@
-package com.hbccommon.echoApi
+package com.hbc.echo
 
-import com.hbccommon.echoApi.api.v0.echo
 import io.circe.{Decoder, Encoder}
 import org.http4s.{EntityDecoder, EntityEncoder, HttpService}
 import io.circe.generic.auto._
 import org.http4s.dsl._
+import com.hbc.echo.api.v0.echo
+
 
 object EchoApi {
   implicit def circeJsonDecoder[A](implicit decoder: Decoder[A]): EntityDecoder[A] = org.http4s.circe.jsonOf[A]

@@ -13,4 +13,4 @@ run:
   dir: echo-api-repo
   path: sbt
   args:
-    - test-only unit*
+    - test-only
