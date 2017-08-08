@@ -1,0 +1,6 @@
+code:
+  hbc:
+    echo-api:
+      version: latest
+      generators:
+        http4s_0_15: src/main/scala/com/hbc/echo/api/v0
